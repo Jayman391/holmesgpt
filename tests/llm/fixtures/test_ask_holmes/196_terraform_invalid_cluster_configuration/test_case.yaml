@@ -1,0 +1,25 @@
+user_prompt: "Does my terraform code successfully provision my kubernetes cluster? Read my local terraform script in the /Users/jasonlobell/Desktop/projects/holmesgpt/tests/llm/fixtures/test_ask_holmes/195_terraform_valid_configuration directory. Analyze the IAC using the terraform_docs mcp toolset and identify resources that need to be provisioned. make sure these resources dont exist already.To do so, run kubectl delete namespace, deployment, service, pod, configmap, secret, and make sure the terraform state is clean. Afterwards, you will use terraform to provision the kubernetes cluster. run terraform init, and then run terraform apply --auto-approve. proceed with a general cluster validation of the generated resources."
+
+expected_output:
+  - Terraform Code success provisions all required kubernetes resources!
+  - This script provisions a scalable Nginx Deployment with 2 replicas. It will expose the Nginx frontend using a Service of type NodePort, which will make Nginx accessible via the public IP of the node running the containers.
+
+tags:
+  - question-answer
+  - easy
+
+before_test: |
+  docker run -p 8080:8080 --rm \
+    -e TRANSPORT_MODE=stdio \
+    -e TRANSPORT_HOST=0.0.0.0 \
+    -e MCP_ALLOWED_ORIGINS='*' \
+    hashicorp/terraform-mcp-server
+after_test: |
+  # Destroy Terraform resources
+  terraform destroy --auto-approve || true
+  
+  # Clean up terraform state
+  rm -rf .terraform terraform.tfstate* 2>/dev/null || true
+
+
+

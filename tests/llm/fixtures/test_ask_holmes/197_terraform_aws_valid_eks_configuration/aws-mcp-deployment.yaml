@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: holmes-mcp
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aws-mcp-sa
+  namespace: holmes-mcp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-mcp-server
+  namespace: holmes-mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aws-mcp-server
+  template:
+    metadata:
+      labels:
+        app: aws-mcp-server
+    spec:
+      serviceAccountName: aws-mcp-sa
+      containers:
+      - name: aws-mcp
+        image: us-central1-docker.pkg.dev/genuine-flight-317411/devel/aws-api-mcp-server:1.0.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: AWS_REGION
+          value: "us-east-1" 
+        - name: AWS_DEFAULT_REGION
+          value: "us-east-1"  
+        - name: READ_OPERATIONS_ONLY
+          value: "true"
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: aws-access-key-id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: aws-secret-access-key
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        readinessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aws-mcp-server
+  namespace: holmes-mcp
+spec:
+  selector:
+    app: aws-mcp-server
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http

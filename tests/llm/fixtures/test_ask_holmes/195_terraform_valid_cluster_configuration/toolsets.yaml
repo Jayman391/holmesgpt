@@ -1,0 +1,7 @@
+mcp_servers:
+  terraform_docs:
+    description: "terraform documentation"
+    config:
+      url: "http://0.0.0.0:8080/mcp"
+      mode: streamable-http
+    llm_instructions: "This server provides general data access capabilities. Use it when you need to retrieve external information or perform remote operations that aren't covered by other toolsets."
